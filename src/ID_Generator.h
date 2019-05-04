@@ -3,7 +3,7 @@
 
 #include <cassert>
 #include <limits>
-#include <vector>
+#include <unordered_set>
 
 /*
 Generates unique IDs
@@ -17,6 +17,8 @@ struct ID_Generator
 	// Create a new ID
 	ID create();
 
+	bool add(ID id);
+
 	// Removes an ID and reuse it later
 	void remove(const ID id);
 
@@ -24,7 +26,7 @@ struct ID_Generator
 
 protected:
 	ID highest_ID = invalid_id;
-	std::vector<ID> unused_IDs;
+	std::unordered_set<ID> unused_IDs;
 };
 
 
@@ -41,15 +43,17 @@ ID ID_Generator<ID>::create()
 
 	if (unused_IDs.size() > 0)
 	{
-		id = unused_IDs.back();
-		unused_IDs.pop_back();
+		// consume an unused ID
+		auto iter = unused_IDs.begin();
+		id = *iter;
+		unused_IDs.erase(iter);
 
 		if (id > highest_ID)
 			highest_ID = id;
 	}
 	else
 	{
-		id = ++highest_ID;
+		id = ++highest_ID; // if it's the first ID and highest_ID is invalid, it will range-loop to 0
 	}
 
 	return id;
@@ -57,9 +61,44 @@ ID ID_Generator<ID>::create()
 
 
 template<typename ID>
+bool ID_Generator<ID>::add(ID id)
+{
+	if(highest_ID != invalid_id && id <= highest_ID)
+	{
+		if(id == highest_ID)
+			return true;
+
+		// check if ID already exists
+		if(unused_IDs.count(id) == 0)
+			return false;
+
+		// if it's below highest ID it must be an unused ID
+		unused_IDs.erase(id);
+	}
+	else
+	{
+		if (highest_ID == invalid_id) {
+			highest_ID = 0;
+		}
+		else {
+			// starting highest_ID is used, so skip adding it to the unused IDs
+			++highest_ID;
+		}
+
+		// add all the IDs between highest_ID and the new ID to the unused IDs
+		for (; highest_ID < id; ++highest_ID) {
+			unused_IDs.emplace(highest_ID);
+		}
+	}
+
+	return true;
+}
+
+
+template<typename ID>
 void ID_Generator<ID>::remove(const ID id)
 {
-	unused_IDs.push_back(id);
+	unused_IDs.emplace(id);
 }
 
 template<typename ID>
