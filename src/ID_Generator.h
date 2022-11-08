@@ -17,6 +17,7 @@ struct ID_Generator
 	// Create a new ID
 	ID create();
 
+	// return true if added, false if already taken.
 	bool add(ID id);
 
 	// Removes an ID and reuse it later
@@ -66,13 +67,12 @@ bool ID_Generator<ID>::add(ID id)
 	if(highest_ID != invalid_id && id <= highest_ID)
 	{
 		if(id == highest_ID)
-			return true;
-
-		// check if ID already exists
-		if(unused_IDs.count(id) == 0)
 			return false;
 
-		// if it's below highest ID it must be an unused ID
+		// check if ID is unused
+		if(unused_IDs.count(id) == 0)
+			return false;
+		// if it's above highest ID it can't be an unused ID
 		unused_IDs.erase(id);
 	}
 	else
