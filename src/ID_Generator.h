@@ -25,7 +25,7 @@ struct ID_Generator
 	void reset();
 
 protected:
-	ID highest_ID = invalid_id;
+	ID highest_ID = invalid_id; // highest used ID
 	std::unordered_set<ID> unused_IDs;
 };
 
@@ -98,7 +98,18 @@ bool ID_Generator<ID>::add(ID id)
 template<typename ID>
 void ID_Generator<ID>::remove(const ID id)
 {
-	unused_IDs.emplace(id);
+	if(id == highest_ID) {
+		--highest_ID;
+		// find the highest used ID
+		// remove unused IDs above the new highest used ID
+		while(unused_IDs.count(highest_ID) != 0){
+			unused_IDs.erase(highest_ID);
+			--highest_ID; //NOTE: if reaching invalid ID unused_IDs should be empty, thus equivilant to reset()
+		}
+	}
+	else {
+		unused_IDs.emplace(id);
+	}
 }
 
 template<typename ID>
